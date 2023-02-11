@@ -1,0 +1,84 @@
+---
+# tasks file for iptables
+
+- name: Include distribution specific variables
+  include_vars: "{{ ansible_distribution }}.yml"
+  tags: [iptables]
+
+- name: Include release specific variables
+  include_vars: "{{ ansible_distribution_release }}.yml"
+  when: ansible_distribution == "Ubuntu"
+  tags: [iptables]
+
+- import_tasks: CentOS.yml
+  when: ansible_distribution == "CentOS"
+  tags: [iptables]
+
+- import_tasks: Debian.yml
+  when: ansible_distribution == "Debian"
+  tags: [iptables]
+
+- import_tasks: Ubuntu.yml
+  when: ansible_distribution == "Ubuntu"
+  tags: [iptables]
+
+- import_tasks: ipset.yml
+  when: iptables_ipset_enabled|bool
+  tags: [iptables]
+
+- meta: flush_handlers
+  when: iptables_ipset_enabled|bool
+  tags: [iptables]
+
+- name: change to legacy iptables
+  become: yes
+  alternatives:
+    name: iptables
+    path: /usr/sbin/iptables-legacy
+  when: ansible_distribution_release == "buster"
+  tags: [iptables]
+
+- name: change to legacy ip6tables
+  become: yes
+  alternatives:
+    name: ip6tables
+    path: /usr/sbin/ip6tables-legacy
+  when: ansible_distribution_release == "buster"
+  tags: [iptables]
+
+- name: Create iptables configuration
+  become: yes
+  template:
+    src: "{{ iptables_configuration_template }}"
+    dest: "{{ iptables_configuration }}"
+    owner: root
+    group: root
+    mode: 0600
+  register: config_result
+  notify:
+    - restart iptables
+  tags: [iptables]
+
+- name: Create iptables6 configuration
+  become: yes
+  template:
+    src: "{{ iptables6_configuration_template }}"
+    dest: "{{ iptables6_configuration }}"
+    owner: root
+    group: root
+    mode: 0600
+  register: config_result
+  notify:
+    - restart iptables
+  tags: [iptables]
+
+- name: Ensure iptables is started and enabled on boot
+  become: yes
+  service:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  changed_when: False
+  with_items:
+    - "{{ iptables_service_name }}"
+  tags: [iptables]

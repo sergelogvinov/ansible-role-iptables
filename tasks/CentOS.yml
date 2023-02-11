@@ -1,0 +1,17 @@
+---
+# tasks file for iptables (CentOS specific)
+
+- name: Install iptables packages
+  become: yes
+  yum:
+    name: "{{ iptables_packages }}"
+    state: present
+  tags: [iptables]
+
+- name: Install ipset
+  become: yes
+  yum:
+    name: ipset
+    state: present
+  when: iptables_ipset_enabled|bool
+  tags: [iptables]

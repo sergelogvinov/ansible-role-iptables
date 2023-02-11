@@ -1,0 +1,95 @@
+#
+
+*filter
+:INPUT {{ iptables_input_policy }} [0:0]
+:FORWARD {{ iptables_forward_policy }} [0:0]
+:OUTPUT {{ iptables_output_policy }} [0:0]
+
+:UDP - [0:0]
+:TCP - [0:0]
+:ICMP - [0:0]
+
+{% for rule in iptables_groups %}
+:{{ rule.name }} - [0:0]
+{% endfor %}
+{% for rule in iptables_groups %}
+{% for host in rule.source_addresses|default() %}
+{% if host.find(':') > 0 %}
+-A {{ rule.name }} -s {{ host }} -j {{ rule.action }}
+{% endif %}
+{% endfor %}
+{% endfor %}
+
+{% if iptables_forward_rules | length > 0 %}
+-A FORWARD -m conntrack --ctstate INVALID -j DROP
+-A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+{% for rule in iptables_forward_rules %}
+{% if rule.src is defined and rule.src.find(':') > 0 %}
+-A FORWARD -s {{ rule.src }} -d {{ rule.dst }} -j {{ rule.action|default("ACCEPT") }}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if iptables_rules_ipv6_raw | length > 0 %}
+{% for rule in iptables_rules_ipv6_raw %}
+{{ rule }}
+{% endfor %}
+{% endif %}
+
+{% for rule in iptables_rules %}
+{% if rule.source_addresses is defined and rule.source_addresses.find('.') > 0 %}
+{% else %}
+{% if rule.protocol == "tcp" or rule.protocol == "tcp6" %}{% if rule.ipset is defined %}
+-A TCP -m set --match-set {{ rule.ipset }}-v6 src -p tcp {% if rule.source_interface is defined %}-i {{ rule.source_interface }} {% endif %}{% if rule.source_addresses is defined %}-s {{ rule.source_addresses }} {% endif %}--dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+{% else %}
+-A TCP -p tcp {% if rule.source_interface is defined %}-i {{ rule.source_interface }} {% endif %}{% if rule.source_addresses is defined %}-s {{ rule.source_addresses }} {% endif %}--dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+{% endif %}{% endif %}
+{% if rule.protocol == "udp" or rule.protocol == "udp6" %}{% if rule.ipset is defined %}
+-A UDP -m set --match-set {{ rule.ipset }}-v6 src -p udp {% if rule.source_interface is defined %}-i {{ rule.source_interface }} {% endif %}{% if rule.source_addresses is defined %}-s {{ rule.source_addresses }} {% endif %}--dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+{% else %}
+-A UDP -p udp {% if rule.source_interface is defined %}-i {{ rule.source_interface }} {% endif %}{% if rule.source_addresses is defined %}-s {{ rule.source_addresses }} {% endif %}--dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+{% endif %}{% endif %}
+{% if rule.protocol == "any" %}{% if rule.ipset is defined %}
+-A TCP -m set --match-set {{ rule.ipset }}-v6 src -p tcp {% if rule.source_interface is defined %}-i {{ rule.source_interface }} {% endif %}{% if rule.source_addresses is defined %}-s {{ rule.source_addresses }} {% endif %}--dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+-A UDP -m set --match-set {{ rule.ipset }}-v6 src -p udp {% if rule.source_interface is defined %}-i {{ rule.source_interface }} {% endif %}{% if rule.source_addresses is defined %}-s {{ rule.source_addresses }} {% endif %}--dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+{% else %}
+-A TCP -p tcp {% if rule.source_interface is defined %}-i {{ rule.source_interface }} {% endif %}{% if rule.source_addresses is defined %}-s {{ rule.source_addresses }} {% endif %}--dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+-A UDP -p udp {% if rule.source_interface is defined %}-i {{ rule.source_interface }} {% endif %}{% if rule.source_addresses is defined %}-s {{ rule.source_addresses }} {% endif %}--dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+{% endif %}{% endif %}
+{% endif %}
+{% endfor %}
+
+-A INPUT -s fe80::/10 -d fe80::/10 -p udp -m udp --sport 547 --dport 546 -m comment --comment Allow-DHCPv6 -j ACCEPT
+-A INPUT -s fe80::/10 -p ipv6-icmp -m icmp6 --icmpv6-type 130/0 -m comment --comment Allow-MLD -j ACCEPT
+-A INPUT -s fe80::/10 -p ipv6-icmp -m icmp6 --icmpv6-type 131/0 -m comment --comment Allow-MLD -j ACCEPT
+-A INPUT -s fe80::/10 -p ipv6-icmp -m icmp6 --icmpv6-type 132/0 -m comment --comment Allow-MLD -j ACCEPT
+-A INPUT -s fe80::/10 -p ipv6-icmp -m icmp6 --icmpv6-type 143/0 -m comment --comment Allow-MLD -j ACCEPT
+{% if iptables_icmp_enabled %}
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 128 -m limit --limit 1000/sec -m comment --comment Allow-ICMPv6-Input -j ACCEPT
+{% endif %}
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 129 -m limit --limit 1000/sec -m comment --comment Allow-ICMPv6-Input -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 1   -m limit --limit 1000/sec -m comment --comment Allow-ICMPv6-Input -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 2   -m limit --limit 1000/sec -m comment --comment Allow-ICMPv6-Input -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 3   -m limit --limit 1000/sec -m comment --comment Allow-ICMPv6-Input -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 4/0 -m limit --limit 1000/sec -m comment --comment Allow-ICMPv6-Input -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 4/1 -m limit --limit 1000/sec -m comment --comment Allow-ICMPv6-Input -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 133 -m limit --limit 1000/sec -m comment --comment Allow-ICMPv6-Input -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 135 -m limit --limit 1000/sec -m comment --comment Allow-ICMPv6-Input -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 134 -m limit --limit 1000/sec -m comment --comment Allow-ICMPv6-Input -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 136 -m limit --limit 1000/sec -m comment --comment Allow-ICMPv6-Input -j ACCEPT
+-A INPUT -p ipv6-icmp -j DROP
+
+-A INPUT -m rt --rt-type 0 -j DROP
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -m conntrack --ctstate INVALID -j DROP
+
+-A INPUT -p udp -m conntrack --ctstate NEW -j UDP
+-A INPUT -p tcp --syn -m conntrack --ctstate NEW -j TCP
+-A INPUT -p icmp -m conntrack --ctstate NEW -j ICMP
+
+-A INPUT -p udp -m udp --dport 546 -j ACCEPT
+
+-A OUTPUT -m rt --rt-type 0 -j DROP
+
+COMMIT

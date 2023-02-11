@@ -1,0 +1,112 @@
+#
+
+*filter
+:INPUT {{ iptables_input_policy }} [0:0]
+:FORWARD {{ iptables_forward_policy }} [0:0]
+:OUTPUT {{ iptables_output_policy }} [0:0]
+
+:UDP - [0:0]
+:TCP - [0:0]
+:ICMP - [0:0]
+
+{% for rule in iptables_groups %}
+:{{ rule.name }} - [0:0]
+{% endfor %}
+{% for rule in iptables_groups %}
+{% for host in rule.source_addresses|default() %}
+{% if host.find('.') > 0 %}
+-A {{ rule.name }} -s {{ host }} -j {{ rule.action }}
+{% endif %}
+{% endfor %}
+{% endfor %}
+
+{% if iptables_forward_rules | length > 0 %}
+-A FORWARD -m conntrack --ctstate INVALID -j DROP
+-A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+{% for rule in iptables_forward_rules %}
+{% if rule.src is defined and rule.src.find(':') > 0 %}
+{% else %}
+-A FORWARD -s {{ rule.src }} -d {{ rule.dst }} -j {{ rule.action|default("ACCEPT") }}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if iptables_rules_ipv4_raw | length > 0 %}
+{% for rule in iptables_rules_ipv4_raw %}
+{{ rule }}
+{% endfor %}
+{% endif %}
+
+{% for rule in iptables_rules %}{% if rule.source_addresses is defined and rule.source_addresses.find(':') > 0 %}
+{% else %}
+{% if rule.protocol == "tcp" or rule.protocol == "tcp4" %}{% if rule.ipset is defined %}
+-A TCP -m set --match-set {{ rule.ipset }}-v4 src -p tcp{{ ' -i '+rule.source_interface if rule.source_interface is defined }}{{ ' -s '+rule.source_addresses if rule.source_addresses is defined }}{{ ' -d '+rule.dest if rule.dest is defined }} --dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+{% else %}
+-A TCP -p tcp{{ ' -i '+rule.source_interface if rule.source_interface is defined }}{{ ' -s '+rule.source_addresses if rule.source_addresses is defined }}{{ ' -d '+rule.dest if rule.dest is defined }} --dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+{% endif %}{% endif %}
+{% if rule.protocol == "udp" or rule.protocol == "udp4" %}{% if rule.ipset is defined %}
+-A UDP -m set --match-set {{ rule.ipset }}-v4 src -p udp{{ ' -i '+rule.source_interface if rule.source_interface is defined }}{{ ' -s '+rule.source_addresses if rule.source_addresses is defined }}{{ ' -d '+rule.dest if rule.dest is defined }} --dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+{% else %}
+-A UDP -p udp{{ ' -i '+rule.source_interface if rule.source_interface is defined }}{{ ' -s '+rule.source_addresses if rule.source_addresses is defined }}{{ ' -d '+rule.dest if rule.dest is defined }} --dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+{% endif %}{% endif %}
+{% if rule.protocol == "any" %}{% if rule.ipset is defined %}
+-A TCP -m set --match-set {{ rule.ipset }}-v4 src -p tcp{{ ' -i '+rule.source_interface if rule.source_interface is defined }}{{ ' -s '+rule.source_addresses if rule.source_addresses is defined }}{{ ' -d '+rule.dest if rule.dest is defined }} --dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+-A UDP -m set --match-set {{ rule.ipset }}-v4 src -p udp{{ ' -i '+rule.source_interface if rule.source_interface is defined }}{{ ' -s '+rule.source_addresses if rule.source_addresses is defined }}{{ ' -d '+rule.dest if rule.dest is defined }} --dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+{% else %}
+-A TCP -p tcp{{ ' -i '+rule.source_interface if rule.source_interface is defined }}{{ ' -s '+rule.source_addresses if rule.source_addresses is defined }}{{ ' -d '+rule.dest if rule.dest is defined }} --dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+-A UDP -p udp{{ ' -i '+rule.source_interface if rule.source_interface is defined }}{{ ' -s '+rule.source_addresses if rule.source_addresses is defined }}{{ ' -d '+rule.dest if rule.dest is defined }} --dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+{% endif %}{% endif %}
+{% endif %}
+{% endfor %}
+
+-A INPUT -i lo -j ACCEPT
+
+{% if iptables_icmp_enabled %}
+-A INPUT -p icmp --icmp-type redirect -j DROP
+-A INPUT -p icmp --icmp-type timestamp-request -j DROP
+-A INPUT -p icmp -m limit --limit 15/sec -j ACCEPT
+-A INPUT -p icmp -j DROP
+{% else %}
+-A INPUT -p icmp -m conntrack --ctstate NEW -j ICMP
+{% endif %}
+-A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -m conntrack --ctstate INVALID -j DROP
+
+-A INPUT -p udp -m conntrack --ctstate NEW -j UDP
+-A INPUT -p tcp --syn -m conntrack --ctstate NEW -j TCP
+
+COMMIT
+
+*nat
+:PREROUTING ACCEPT [0:0]
+{% if ansible_distribution != 'CentOS' %}
+:INPUT ACCEPT [0:0]
+{% endif %}
+:OUTPUT ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+
+{% if iptables_nat_enabled %}
+-A PREROUTING -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+{% for port_forward in iptables_port_forward_rules %}
+{% if port_forward.protocol == "tcp" %}
+-A PREROUTING -i {{ port_forward.interface|default("eth0") }} -p tcp -m conntrack --ctstate NEW --dport {{ port_forward.port|default("0:65535") }} -j DNAT --to-destination {{ port_forward.to_ip }}:{{ port_forward.to_port }}
+{% endif %}
+{% if port_forward.protocol == "udp" %}
+-A PREROUTING -i {{ port_forward.interface|default("eth0") }} -p udp -m conntrack --ctstate NEW --dport {{ port_forward.port|default("0:65535") }} -j DNAT --to-destination {{ port_forward.to_ip }}:{{ port_forward.to_port }}
+{% endif %}
+{% if port_forward.protocol == "any" %}
+-A PREROUTING -i {{ port_forward.interface|default("eth0") }} -p tcp -m conntrack --ctstate NEW --dport {{ port_forward.port|default("0:65535") }} -j DNAT --to-destination {{ port_forward.to_ip }}:{{ port_forward.to_port }}
+-A PREROUTING -i {{ port_forward.interface|default("eth0") }} -p udp -m conntrack --ctstate NEW --dport {{ port_forward.port|default("0:65535") }} -j DNAT --to-destination {{ port_forward.to_ip }}:{{ port_forward.to_port }}
+{% endif %}
+
+{% endfor %}
+-A POSTROUTING ! -s {{ ansible_default_ipv4['address'] }}/32 -o {{ ansible_default_ipv4['interface'] }} -j MASQUERADE
+
+{% endif %}
+{% if iptables_rules_nat_ipv4_raw | length > 0 %}
+{% for rule in iptables_rules_nat_ipv4_raw %}
+{{ rule }}
+{% endfor %}
+{% endif %}
+
+COMMIT

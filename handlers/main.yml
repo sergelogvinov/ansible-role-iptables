@@ -1,0 +1,26 @@
+---
+
+- name: restart iptables
+  become: yes
+  service:
+    name: "{{ item }}"
+    state: restarted
+  changed_when: config_result is changed
+  when: iptables_apply_changes|bool
+  with_items:
+    - "{{ iptables_service_name }}"
+  tags: [iptables]
+
+- name: reload systemd
+  become: yes
+  command: systemctl daemon-reload
+  tags: [iptables]
+
+- name: restart and enable ipset
+  become: yes
+  service:
+    name: ipset
+    state: restarted
+    enabled: yes
+  when: iptables_ipset_enabled|bool
+  tags: [iptables]

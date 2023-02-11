@@ -1,0 +1,17 @@
+[Unit]
+Description=Loading IP Sets
+DefaultDependencies=no
+Wants=network-pre.target systemd-modules-load.service local-fs.target
+Before=network-pre.target iptables.service ip6tables.service netfilter-persistent.service
+After=systemd-modules-load.service local-fs.target
+ConditionPathExists={{ iptables_ipset_confdir }}/ipset
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/sbin/ipset -f "{{ iptables_ipset_confdir }}/ipset" restore
+ExecReload=/sbin/ipset -f "{{ iptables_ipset_confdir }}/ipset" restore
+ExecStop=
+
+[Install]
+WantedBy=multi-user.target

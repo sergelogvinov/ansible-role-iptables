@@ -1,0 +1,28 @@
+{% for item in iptables_ipset %}
+
+-exist create {{ item.name }}-v4 {{ item.type }} family inet{% if item.timeout is defined %} timeout {{ item.timeout }}{% endif %}{% if item.range is defined %} range {{ item.range }}{% endif %}
+
+-exist create {{ item.name }}-v6 {{ item.type }} family inet6{% if item.timeout is defined %} timeout {{ item.timeout }}{% endif %}{% if item.range is defined %} range {{ item.range }}{% endif %}
+
+-exist create {{ item.name }}-v4-tmp {{ item.type }} family inet{% if item.timeout is defined %} timeout {{ item.timeout }}{% endif %}{% if item.range is defined %} range {{ item.range }}{% endif %}
+
+-exist create {{ item.name }}-v6-tmp {{ item.type }} family inet6{% if item.timeout is defined %} timeout {{ item.timeout }}{% endif %}{% if item.range is defined %} range {{ item.range }}{% endif %}
+
+{% for part in item.hosts | sort | unique %}
+{% if part.find('.') > 0 %}
+-exist add {{ item.name }}-v4-tmp {{ part }}
+{% else %}
+-exist add {{ item.name }}-v6-tmp {{ part }}
+{% endif %}
+{% endfor %}
+{% endfor %}
+
+# apply all
+{% for item in iptables_ipset %}
+swap {{ item.name }}-v4-tmp {{ item.name }}-v4
+swap {{ item.name }}-v6-tmp {{ item.name }}-v6
+{% endfor %}
+{% for item in iptables_ipset %}
+destroy {{ item.name }}-v4-tmp
+destroy {{ item.name }}-v6-tmp
+{% endfor %}

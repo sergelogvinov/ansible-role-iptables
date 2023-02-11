@@ -1,0 +1,17 @@
+---
+# tasks file for iptables (Ubuntu specific)
+
+- name: Install iptables packages
+  become: yes
+  apt:
+    name: "{{ iptables_packages }}"
+    state: present
+  tags: [iptables]
+
+- name: Install ipset
+  become: yes
+  apt:
+    name: ipset
+    state: present
+  when: iptables_ipset_enabled|bool
+  tags: [iptables]
