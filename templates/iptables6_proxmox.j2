@@ -1,0 +1,46 @@
+#
+
+*filter
+:INPUT {{ iptables_input_policy }} [0:0]
+:FORWARD {{ iptables_forward_policy }} [0:0]
+:OUTPUT {{ iptables_output_policy }} [0:0]
+
+:UDP - [0:0]
+:TCP - [0:0]
+:ICMP - [0:0]
+
+{% for rule in iptables_groups %}
+:{{ rule.name }} - [0:0]
+{% endfor %}
+{% for rule in iptables_groups %}
+{% for host in rule.source_addresses|default() %}
+{% if host.find(':') > 0 %}
+-A {{ rule.name }} -s {{ host }} -j {{ rule.action }}
+{% endif %}
+{% endfor %}
+{% endfor %}
+
+{% if iptables_rules_ipv6_raw | length > 0 %}
+{% for rule in iptables_rules_ipv6_raw %}
+{{ rule }}
+{% endfor %}
+{% endif %}
+
+{% for rule in iptables_rules %}
+{% if rule.source_addresses is defined and rule.source_addresses.find('.') > 0 %}
+{% else %}
+{% if rule.protocol == "tcp" or rule.protocol == "tcp6" %}
+-A TCP -p tcp {% if rule.source_interface is defined %}-i {{ rule.source_interface }} {% endif %}{% if rule.source_addresses is defined %}-s {{ rule.source_addresses }} {% endif %}--dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+{% endif %}
+{% if rule.protocol == "udp" or rule.protocol == "udp6" %}
+-A UDP -p udp {% if rule.source_interface is defined %}-i {{ rule.source_interface }} {% endif %}{% if rule.source_addresses is defined %}-s {{ rule.source_addresses }} {% endif %}--dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+{% endif %}
+{% if rule.protocol == "any" %}
+-A TCP -p tcp {% if rule.source_interface is defined %}-i {{ rule.source_interface }} {% endif %}{% if rule.source_addresses is defined %}-s {{ rule.source_addresses }} {% endif %}--dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+-A UDP -p udp {% if rule.source_interface is defined %}-i {{ rule.source_interface }} {% endif %}{% if rule.source_addresses is defined %}-s {{ rule.source_addresses }} {% endif %}--dport {{ rule.port|default("0:65535") }} {% if rule.comment is defined -%} -m comment --comment "{{ rule.comment }}" {%- endif %} -j {{ rule.action|default("ACCEPT") }}
+{% endif %}
+{% endif %}
+{% endfor %}
+
+
+COMMIT
