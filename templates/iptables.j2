@@ -100,7 +100,7 @@ COMMIT
 {% endif %}
 
 {% endfor %}
--A POSTROUTING ! -s {{ ansible_default_ipv4['address'] }}/32 -o {{ ansible_default_ipv4['interface'] }} -j MASQUERADE
+-A POSTROUTING ! -s {{ ansible_default_ipv4['address'] }}/32 -o {{ ansible_default_ipv4['interface'] }} -j SNAT --to-source {{ ansible_default_ipv4['address'] }}
 
 {% endif %}
 {% if iptables_rules_nat_ipv4_raw | length > 0 %}

@@ -93,3 +93,24 @@
 -A OUTPUT -m rt --rt-type 0 -j DROP
 
 COMMIT
+
+*nat
+:PREROUTING ACCEPT [0:0]
+{% if ansible_distribution != 'CentOS' %}
+:INPUT ACCEPT [0:0]
+{% endif %}
+:OUTPUT ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+
+{% if iptables_nat_enabled %}
+-A PREROUTING -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+-A POSTROUTING ! -s {{ ansible_default_ipv6['address'] }}/128 -o {{ ansible_default_ipv6['interface'] }} -j SNAT --to-source {{ ansible_default_ipv6['address'] }}
+
+{% endif %}
+{% if iptables_rules_nat_ipv6_raw | length > 0 %}
+{% for rule in iptables_rules_nat_ipv6_raw %}
+{{ rule }}
+{% endfor %}
+{% endif %}
+
+COMMIT
