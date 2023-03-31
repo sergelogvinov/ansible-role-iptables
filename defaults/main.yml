@@ -35,6 +35,7 @@ iptables_rules_ipv6_raw: []
 
 iptables_rules_nat_ipv4_raw: []
 iptables_rules_nat_ipv6_raw: []
+iptables_rules_nat_ipv6_subnet: fd20::/20
 
 iptables_ipset: []
   # - name: WE

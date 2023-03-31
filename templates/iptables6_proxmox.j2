@@ -42,5 +42,22 @@
 {% endif %}
 {% endfor %}
 
+COMMIT
+
+*nat
+:PREROUTING ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+
+{% if iptables_nat_enabled %}
+-A PREROUTING -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+-A POSTROUTING -s {{ iptables_rules_nat_ipv6_subnet }} -o {{ ansible_default_ipv6['interface'] }} -j SNAT --to-source {{ ansible_default_ipv6['address'] }}
+
+{% endif %}
+{% if iptables_rules_nat_ipv6_raw | length > 0 %}
+{% for rule in iptables_rules_nat_ipv6_raw %}
+{{ rule }}
+{% endfor %}
+{% endif %}
 
 COMMIT
