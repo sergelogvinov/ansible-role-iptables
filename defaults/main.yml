@@ -30,6 +30,13 @@ iptables6_groups: []
 iptables_forward_rules: []
 iptables_port_forward_rules: []
 
+iptables_ipv4_raw: []
+iptables_ipv6_raw: []
+  # - -A PREROUTING -s "{{ ansible_default_ipv6['address'] | ansible.utils.ipsubnet(64,0) | ansible.utils.ipmath('1091') }}/128" -j NOTRACK
+  # - -A PREROUTING -d "{{ ansible_default_ipv6['address'] | ansible.utils.ipsubnet(64,0) | ansible.utils.ipmath('1091') }}/128" -j NOTRACK
+  # - -A OUTPUT -d "{{ ansible_default_ipv6['address'] | ansible.utils.ipsubnet(64,0) | ansible.utils.ipmath('1091') }}/128" -j NOTRACK
+  # - -A OUTPUT -s "{{ ansible_default_ipv6['address'] | ansible.utils.ipsubnet(64,0) | ansible.utils.ipmath('1091') }}/128" -j NOTRACK
+
 iptables_rules_ipv4_raw: []
 iptables_rules_ipv6_raw: []
 

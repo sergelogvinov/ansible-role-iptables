@@ -1,5 +1,17 @@
 #
 
+{% if iptables_ipv6_raw | length > 0 %}
+*raw
+:PREROUTING ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+
+{% for rule in iptables_ipv6_raw %}
+{{ rule }}
+{% endfor %}
+
+COMMIT
+{% endif %}
+
 *filter
 :INPUT {{ iptables_input_policy }} [0:0]
 :FORWARD {{ iptables_forward_policy }} [0:0]
