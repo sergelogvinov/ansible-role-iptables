@@ -1,17 +1,5 @@
 #
 
-{% if iptables_ipv4_raw | length > 0 %}
-*raw
-:PREROUTING ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
-
-{% for rule in iptables_ipv4_raw %}
-{{ rule }}
-{% endfor %}
-
-COMMIT
-{% endif %}
-
 *filter
 :INPUT {{ iptables_input_policy }} [0:0]
 :FORWARD {{ iptables_forward_policy }} [0:0]
@@ -110,12 +98,17 @@ COMMIT
 {% endif %}
 COMMIT
 
-{% if iptables_nat_enabled %}
 *raw
 :PREROUTING ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
+{% if iptables_nat_enabled %}
 -A PREROUTING -i fwbr+ -j CT --zone 1
+{% endif %}
+
+{% if iptables_ipv4_raw | length > 0 %}
+{% for rule in iptables_ipv4_raw %}
+{{ rule }}
+{% endfor %}
+{% endif %}
 
 COMMIT
-
-{% endif %}
