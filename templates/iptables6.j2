@@ -102,7 +102,7 @@ COMMIT
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
 
-{% if iptables_nat_enabled %}
+{% if iptables_nat_enabled and ansible_default_ipv6 %}
 -A PREROUTING -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 -A POSTROUTING ! -s {{ ansible_default_ipv6['address'] }}/128 -o {{ ansible_default_ipv6['interface'] }} -j SNAT --to-source {{ ansible_default_ipv6['address'] }}
 
