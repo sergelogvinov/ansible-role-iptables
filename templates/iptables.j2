@@ -60,7 +60,6 @@
 {% endfor %}
 
 -A INPUT -i lo -j ACCEPT
-
 {% if iptables_icmp_enabled %}
 -A INPUT -p icmp --icmp-type redirect -j DROP
 -A INPUT -p icmp --icmp-type timestamp-request -j DROP
@@ -69,6 +68,7 @@
 {% else %}
 -A INPUT -p icmp -m conntrack --ctstate NEW -j ICMP
 {% endif %}
+
 -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 -A INPUT -m conntrack --ctstate INVALID -j DROP
 
