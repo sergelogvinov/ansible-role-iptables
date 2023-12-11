@@ -1,9 +1,9 @@
 #
 
 *filter
-:INPUT {{ iptables_input_policy }} [0:0]
-:FORWARD {{ iptables_forward_policy }} [0:0]
-:OUTPUT {{ iptables_output_policy }} [0:0]
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
 
 :UDP - [0:0]
 :TCP - [0:0]
