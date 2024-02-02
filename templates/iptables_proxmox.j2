@@ -109,6 +109,8 @@ COMMIT
 {% if iptables_nat_enabled %}
 -A PREROUTING -i fwbr+ -j CT --zone 1
 {% endif %}
+-A PREROUTING -s 127.0.0.1/32 -j CT --notrack
+-A OUTPUT     -d 127.0.0.1/32 -j CT --notrack
 
 {% if iptables_ipv4_raw | length > 0 %}
 {% for rule in iptables_ipv4_raw %}
