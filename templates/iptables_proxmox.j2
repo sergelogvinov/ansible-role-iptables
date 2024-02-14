@@ -98,7 +98,7 @@ COMMIT
 {{ rule }}
 {% endfor %}
 {% endif %}
--A POSTROUTING ! -s {{ ansible_default_ipv4['address'] }}/32 -o {{ ansible_default_ipv4['interface'] }} -j SNAT --to-source {{ ansible_default_ipv4['address'] }}
+-A POSTROUTING ! -s {{ ansible_default_ipv4['address'] }}/{{ ansible_default_ipv4['prefix'] }} -o {{ ansible_default_ipv4['interface'] }} -j SNAT --to-source {{ ansible_default_ipv4['address'] }}
 
 {% endif %}
 COMMIT
