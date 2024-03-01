@@ -5,7 +5,7 @@
   service:
     name: "{{ item }}"
     state: restarted
-  changed_when: config_result is changed
+  changed_when: config_result is changed or config6_result is changed
   when: iptables_apply_changes|bool
   with_items:
     - "{{ iptables_service_name }}"

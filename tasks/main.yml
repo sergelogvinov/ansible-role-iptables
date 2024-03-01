@@ -67,7 +67,7 @@
     owner: root
     group: root
     mode: 0600
-  register: config_result
+  register: config6_result
   notify:
     - restart iptables
   tags: [iptables]
