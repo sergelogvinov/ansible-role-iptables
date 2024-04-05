@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/sergelogvinov/ansible-role-iptables/compare/v0.2.0...v0.2.1) (2024-04-05)
+
+
+### Bug Fixes
+
+* ipv4 mtu fix ([4cc5740](https://github.com/sergelogvinov/ansible-role-iptables/commit/4cc5740d7b150fe23ded34176558d587b045e1d0))
+
 ## [0.2.0](https://github.com/sergelogvinov/ansible-role-iptables/compare/v0.1.0...v0.2.0) (2024-02-29)
 
 
