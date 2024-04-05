@@ -44,6 +44,17 @@
 
 COMMIT
 
+{% if iptables_nat_enabled and ansible_default_ipv6['interface'] is defined and ansible_default_ipv6['address'] is defined %}
+*mangle
+:PREROUTING ACCEPT [0:0]
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+
+COMMIT
+{% endif %}
+
 *nat
 :PREROUTING ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]

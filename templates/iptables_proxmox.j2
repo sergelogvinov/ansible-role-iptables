@@ -70,6 +70,19 @@
 
 COMMIT
 
+{% if iptables_nat_enabled %}
+*mangle
+:PREROUTING ACCEPT [0:0]
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+
+-A FORWARD ! -s {{ ansible_default_ipv4['address'] }}/{{ ansible_default_ipv4['prefix'] }} -o {{ ansible_default_ipv4['interface'] }} -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+
+COMMIT
+{% endif %}
+
 *nat
 :PREROUTING ACCEPT [0:0]
 {% if ansible_distribution != 'CentOS' %}
