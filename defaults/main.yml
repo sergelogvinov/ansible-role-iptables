@@ -37,6 +37,9 @@ iptables_ipv6_raw: []
   # - -A OUTPUT -d "{{ ansible_default_ipv6['address'] | ansible.utils.ipsubnet(64,0) | ansible.utils.ipmath('1091') }}/128" -j NOTRACK
   # - -A OUTPUT -s "{{ ansible_default_ipv6['address'] | ansible.utils.ipsubnet(64,0) | ansible.utils.ipmath('1091') }}/128" -j NOTRACK
 
+iptables_mangle_ipv4_raw: []
+iptables_mangle_ipv6_raw: []
+
 iptables_rules_ipv4_raw: []
 iptables_rules_ipv6_raw: []
 
