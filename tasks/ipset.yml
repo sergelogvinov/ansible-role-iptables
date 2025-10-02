@@ -1,7 +1,7 @@
 ---
 
 - name: Create ipset service file
-  become: yes
+  become: true
   template:
     src: ipset.service.j2
     dest: "/etc/systemd/system/ipset.service"
@@ -13,14 +13,14 @@
   tags: [iptables]
 
 - name: prepare directories
-  become: yes
+  become: true
   file:
     path: "{{ iptables_ipset_confdir }}"
     state: directory
   tags: [iptables]
 
 - name: Generate ipset file
-  become: yes
+  become: true
   template:
     src: ipset.j2
     dest: "{{ iptables_ipset_confdir }}/ipset"
@@ -29,7 +29,7 @@
   tags: [iptables,ipset]
 
 - name: Ensure ipset is enabled on boot
-  become: yes
+  become: true
   service:
     name: ipset
     enabled: yes

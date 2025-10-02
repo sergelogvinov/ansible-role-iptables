@@ -31,7 +31,7 @@
   tags: [iptables]
 
 - name: change to legacy iptables
-  become: yes
+  become: true
   alternatives:
     name: iptables
     path: /usr/sbin/iptables-legacy
@@ -39,7 +39,7 @@
   tags: [iptables]
 
 - name: change to legacy ip6tables
-  become: yes
+  become: true
   alternatives:
     name: ip6tables
     path: /usr/sbin/ip6tables-legacy
@@ -47,7 +47,7 @@
   tags: [iptables]
 
 - name: Create iptables configuration
-  become: yes
+  become: true
   template:
     src: "{{ iptables_configuration_template }}"
     dest: "{{ iptables_configuration }}"
@@ -60,7 +60,7 @@
   tags: [iptables]
 
 - name: Create iptables6 configuration
-  become: yes
+  become: true
   template:
     src: "{{ iptables6_configuration_template }}"
     dest: "{{ iptables6_configuration }}"
@@ -73,7 +73,7 @@
   tags: [iptables]
 
 - name: Ensure iptables is started and enabled on boot
-  become: yes
+  become: true
   service:
     name: "{{ item }}"
     state: started
