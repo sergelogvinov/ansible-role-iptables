@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/sergelogvinov/ansible-role-iptables/compare/v0.3.0...v0.3.1) (2026-01-30)
+
+
+### Bug Fixes
+
+* ansible deprecation warning ([5230f58](https://github.com/sergelogvinov/ansible-role-iptables/commit/5230f585f94ac249b8290ccc2606f3857761b3c3))
+
 ## [0.3.0](https://github.com/sergelogvinov/ansible-role-iptables/compare/v0.2.0...v0.3.0) (2025-10-02)
 
 
