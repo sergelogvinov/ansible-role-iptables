@@ -2,24 +2,24 @@
 # tasks file for iptables
 
 - name: Include distribution specific variables
-  include_vars: "{{ ansible_distribution }}.yml"
+  include_vars: "{{ ansible_facts['distribution'] }}.yml"
   tags: [iptables]
 
 - name: Include release specific variables
-  include_vars: "{{ ansible_distribution_release }}.yml"
-  when: ansible_distribution == "Ubuntu"
+  include_vars: "{{ ansible_facts['distribution_release'] }}.yml"
+  when: ansible_facts["distribution"] == "Ubuntu"
   tags: [iptables]
 
 - import_tasks: CentOS.yml
-  when: ansible_distribution == "CentOS"
+  when: ansible_facts["distribution"] == "CentOS"
   tags: [iptables]
 
 - import_tasks: Debian.yml
-  when: ansible_distribution == "Debian"
+  when: ansible_facts["distribution"] == "Debian"
   tags: [iptables]
 
 - import_tasks: Ubuntu.yml
-  when: ansible_distribution == "Ubuntu"
+  when: ansible_facts["distribution"] == "Ubuntu"
   tags: [iptables]
 
 - import_tasks: ipset.yml
@@ -35,7 +35,7 @@
   alternatives:
     name: iptables
     path: /usr/sbin/iptables-legacy
-  when: ansible_distribution_release == "buster"
+  when: ansible_facts["distribution_release"] == "buster"
   tags: [iptables]
 
 - name: change to legacy ip6tables
@@ -43,7 +43,7 @@
   alternatives:
     name: ip6tables
     path: /usr/sbin/ip6tables-legacy
-  when: ansible_distribution_release == "buster"
+  when: ansible_facts["distribution_release"] == "buster"
   tags: [iptables]
 
 - name: Create iptables configuration

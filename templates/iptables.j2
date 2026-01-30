@@ -79,7 +79,7 @@ COMMIT
 
 *nat
 :PREROUTING ACCEPT [0:0]
-{% if ansible_distribution != 'CentOS' %}
+{% if ansible_facts["distribution"] != 'CentOS' %}
 :INPUT ACCEPT [0:0]
 {% endif %}
 :OUTPUT ACCEPT [0:0]
@@ -100,7 +100,7 @@ COMMIT
 {% endif %}
 
 {% endfor %}
--A POSTROUTING ! -s {{ ansible_default_ipv4['address'] }}/32 -o {{ ansible_default_ipv4['interface'] }} -j SNAT --to-source {{ ansible_default_ipv4['address'] }}
+-A POSTROUTING ! -s {{ ansible_facts["default_ipv4"]['address'] }}/32 -o {{ ansible_facts["default_ipv4"]['interface'] }} -j SNAT --to-source {{ ansible_facts["default_ipv4"]['address'] }}
 
 {% endif %}
 {% if iptables_rules_nat_ipv4_raw | length > 0 %}

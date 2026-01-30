@@ -78,7 +78,7 @@ COMMIT
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
 
--A FORWARD ! -s {{ ansible_default_ipv4['address'] }}/{{ ansible_default_ipv4['prefix'] }} -o {{ ansible_default_ipv4['interface'] }} -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+-A FORWARD ! -s {{ ansible_facts["default_ipv4"]['address'] }}/{{ ansible_facts["default_ipv4"]['prefix'] }} -o {{ ansible_facts["default_ipv4"]['interface'] }} -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 {% if iptables_mangle_ipv4_raw | length > 0 %}
 {% for rule in iptables_mangle_ipv4_raw %}
 {{ rule }}
@@ -90,7 +90,7 @@ COMMIT
 
 *nat
 :PREROUTING ACCEPT [0:0]
-{% if ansible_distribution != 'CentOS' %}
+{% if ansible_facts["distribution"] != 'CentOS' %}
 :INPUT ACCEPT [0:0]
 {% endif %}
 :OUTPUT ACCEPT [0:0]
@@ -116,7 +116,7 @@ COMMIT
 {{ rule }}
 {% endfor %}
 {% endif %}
--A POSTROUTING ! -s {{ ansible_default_ipv4['address'] }}/{{ ansible_default_ipv4['prefix'] }} -o {{ ansible_default_ipv4['interface'] }} -j SNAT --to-source {{ ansible_default_ipv4['address'] }}
+-A POSTROUTING ! -s {{ ansible_facts["default_ipv4"]['address'] }}/{{ ansible_facts["default_ipv4"]['prefix'] }} -o {{ ansible_facts["default_ipv4"]['interface'] }} -j SNAT --to-source {{ ansible_facts["default_ipv4"]['address'] }}
 
 {% endif %}
 COMMIT
